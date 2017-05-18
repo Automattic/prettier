@@ -114,13 +114,13 @@ function genericPrint(path, options, printPath, args) {
   }
 
   if (needsParens) {
-    parts.unshift("( ");
+    parts.unshift("(", " ");
   }
 
   parts.push(linesWithoutParens);
 
   if (needsParens) {
-    parts.push(" )");
+    parts.push(" ", ")");
   }
 
   return concat(parts);
@@ -182,7 +182,7 @@ function genericPrintNoParens(path, options, print, args) {
     case "ExpressionStatement":
       return concat([path.call(print, "expression"), semi]); // Babel extension.
     case "ParenthesizedExpression":
-      return concat(["( ", path.call(print, "expression"), " )"]);
+      return concat(["(", " ", path.call(print, "expression"), " ", ")"]);
     case "AssignmentExpression":
       return printAssignment(
         n.left,
@@ -661,7 +661,7 @@ function genericPrintNoParens(path, options, print, args) {
         return concat([
           path.call(print, "callee"),
           path.call(print, "typeParameters"),
-          concat(["( ", join(", ", path.map(print, "arguments")), " )"])
+          concat(["(", " ", join(", ", path.map(print, "arguments")), " ", ")"])
         ]);
       }
 
@@ -787,7 +787,7 @@ function genericPrintNoParens(path, options, print, args) {
         parts.push(path.call(print, "value"));
       } else {
         if (n.computed) {
-          parts.push("[ ", path.call(print, "key"), " ]");
+          parts.push("[", " ", path.call(print, "key"), " ", "]");
         } else {
           parts.push(printPropertyKey(path, options, print));
         }
@@ -841,10 +841,10 @@ function genericPrintNoParens(path, options, print, args) {
         parts.push(
           group(
             concat([
-              "[ ",
+              "[",
               indent(
                 concat([
-                  softline,
+                  line,
                   printArrayItems(path, options, "elements", print)
                 ])
               ),
@@ -861,8 +861,7 @@ function genericPrintNoParens(path, options, print, args) {
                 options,
                 /* sameIndent */ true
               ),
-              " ",
-              softline,
+              line,
               "]"
             ])
           )
@@ -908,8 +907,10 @@ function genericPrintNoParens(path, options, print, args) {
       return nodeStr(n, options);
     case "UnaryExpression":
       parts.push(n.operator);
-      if ( n.argument && n.argument.type !== "UnaryExpression" && ( n.operator !== '+' && n.operator !== '-') ) {
-        parts.push(' ');
+
+      if (/[a-z]$/.test(n.operator)) parts.push(" ");
+      if (n.operator === '!' && !(n.argument && n.argument.type === "UnaryExpression" && n.argument.operator === '!')) {
+        parts.push(" ");
       }
 
       parts.push(path.call(print, "argument"));
@@ -991,8 +992,10 @@ function genericPrintNoParens(path, options, print, args) {
       );
     case "WithStatement":
       return concat([
-        "with ( ",
+        "with (",
+        " ",
         path.call(print, "object"),
+        " ",
         ")",
         adjustClause(n.body, path.call(print, "body"))
       ]);
@@ -1000,12 +1003,11 @@ function genericPrintNoParens(path, options, print, args) {
       const con = adjustClause(n.consequent, path.call(print, "consequent"));
       const opening = group(
         concat([
-          "if ( ",
+          "if (",
           group(
             concat([
-              indent(concat([softline, path.call(print, "test")])),
-							" ", // hack to support only putting the extra space for closing parens that are not immediately after newlines
-              softline
+              indent(concat([line, path.call(print, "test")])),
+              line
             ])
           ),
           ")",
@@ -1053,12 +1055,12 @@ function genericPrintNoParens(path, options, print, args) {
 
       return concat([
         printedComments,
-        "for ( ",
+        "for (",
         group(
           concat([
             indent(
               concat([
-                softline,
+                line,
                 path.call(print, "init"),
                 ";",
                 line,
@@ -1068,33 +1070,35 @@ function genericPrintNoParens(path, options, print, args) {
                 path.call(print, "update")
               ])
             ),
-            softline
+            line
           ])
         ),
-        " )",
+        ")",
         body
       ]);
     }
     case "WhileStatement":
       return concat([
-        "while ( ",
+        "while (",
         group(
           concat([
-            indent(concat([softline, path.call(print, "test")])),
-            softline
+            indent(concat([line, path.call(print, "test")])),
+            line
           ])
         ),
-        " )",
+        ")",
         adjustClause(n.body, path.call(print, "body"))
       ]);
     case "ForInStatement":
       // Note: esprima can't actually parse "for each (".
       return concat([
-        n.each ? "for each ( " : "for ( ",
+        n.each ? "for each (" : "for (",
+        " ",
         path.call(print, "left"),
         " in ",
         path.call(print, "right"),
-        " )",
+        " ",
+        ")",
         adjustClause(n.body, path.call(print, "body"))
       ]);
 
@@ -1108,11 +1112,13 @@ function genericPrintNoParens(path, options, print, args) {
       return concat([
         "for",
         isAwait ? " await" : "",
-        " ( ",
+        " (",
+        " ",
         path.call(print, "left"),
         " of ",
         path.call(print, "right"),
-        " )",
+        " ",
+        ")",
         adjustClause(n.body, path.call(print, "body"))
       ]);
 
@@ -1128,7 +1134,7 @@ function genericPrintNoParens(path, options, print, args) {
       }
       parts.push("while");
 
-      parts.push(" ( ", path.call(print, "test"), " )", semi);
+      parts.push(" (", " ", path.call(print, "test"), " ", ")", semi);
 
       return concat(parts);
     case "DoExpression":
@@ -1176,13 +1182,13 @@ function genericPrintNoParens(path, options, print, args) {
 
       return concat(parts);
     case "CatchClause":
-      parts.push("catch ( ", path.call(print, "param"));
+      parts.push("catch (", " ", path.call(print, "param"));
 
       if (n.guard)
         // Note: esprima does not recognize conditional catch clauses.
         parts.push(" if ", path.call(print, "guard"));
 
-      parts.push(" ) ", path.call(print, "body"));
+      parts.push(" ", ") ", path.call(print, "body"));
 
       return concat(parts);
     case "ThrowStatement":
@@ -1190,9 +1196,11 @@ function genericPrintNoParens(path, options, print, args) {
     // Note: ignoring n.lexical because it has no printing consequences.
     case "SwitchStatement":
       return concat([
-        "switch ( ",
+        "switch (",
+        " ",
         path.call(print, "discriminant"),
-        " ) {",
+        " ",
+        ") {",
         n.cases.length > 0
           ? indent(concat([hardline, join(hardline, path.map(print, "cases"))]))
           : "",
@@ -1249,10 +1257,10 @@ function genericPrintNoParens(path, options, print, args) {
           (n.value.type === "StringLiteral" || n.value.type === "Literal") &&
           typeof n.value.value === "string"
         ) {
-          const value = n.value.extra ? n.value.extra.raw : n.value.value;
+          const value = n.value.extra ? n.value.extra.raw : n.value.raw;
           res =
             '"' +
-            value.slice(1, value.length-1).replace(/"/g, "&quot;") +
+            value.slice(1, value.length - 1).replace(/"/g, "&quot;") +
             '"';
         } else {
           res = path.call(print, "value");
@@ -1274,7 +1282,7 @@ function genericPrintNoParens(path, options, print, args) {
         path.call(print, "property")
       ]);
     case "JSXSpreadAttribute":
-      return concat(["{ ...", path.call(print, "argument"), " }"]);
+      return concat(["{", " ", "...", path.call(print, "argument"), " ", "}"]);
     case "JSXExpressionContainer": {
       const parent = path.getParentNode(0);
 
@@ -1293,16 +1301,15 @@ function genericPrintNoParens(path, options, print, args) {
 
       if (shouldInline) {
         return group(
-          concat(["{ ", path.call(print, "expression"), lineSuffixBoundary, " }"])
+          concat(["{", " ", path.call(print, "expression"), lineSuffixBoundary, " ", "}"])
         );
       }
 
       return group(
         concat([
-          "{ ",
-          indent(concat([softline, path.call(print, "expression")])),
-          " ",
-          softline,
+          "{",
+          indent(concat([line, path.call(print, "expression")])),
+          line,
           lineSuffixBoundary,
           "}"
         ])
@@ -1463,10 +1470,12 @@ function genericPrintNoParens(path, options, print, args) {
 
         if (i < expressions.length) {
           parts.push(
-            "${ ",
+            "${",
+            " ",
             removeLines(expressions[i]),
             lineSuffixBoundary,
-            " }"
+            " ",
+            "}"
           );
         }
       }, "quasis");
@@ -2203,31 +2212,35 @@ function printArgumentsList(path, options, print) {
       printed.some(willBreak) ? breakParent : "",
       conditionalGroup(
         [
-          concat(["( ", join(concat([", "]), printedExpanded), " )"]),
+          concat(["(", " ", join(concat([", "]), printedExpanded), " ", ")"]),
           shouldGroupFirst
             ? concat([
-                "( ",
+                "(",
+                " ",
                 group(printedExpanded[0], { shouldBreak: true }),
                 printed.length > 1 ? ", " : "",
                 join(concat([",", line]), printed.slice(1)),
-                " )"
+                " ",
+                ")"
               ])
             : concat([
-                "( ",
+                "(",
+                " ",
                 join(concat([",", line]), printed.slice(0, -1)),
                 printed.length > 1 ? ", " : "",
                 group(util.getLast(printedExpanded), {
-                  shouldBreak: false,
+                  shouldBreak: true
                 }),
-                " )"
+                " ",
+                ")"
               ]),
           group(
             concat([
-              "( ",
+              "(",
               indent(concat([line, join(concat([",", line]), printed)])),
               shouldPrintComma(options, "all") ? "," : "",
               line,
-              ")" // do not have extra space after a line!
+              ")"
             ]),
             { shouldBreak: true }
           )
@@ -2239,11 +2252,10 @@ function printArgumentsList(path, options, print) {
 
   return group(
     concat([
-      "( ",
-      indent(concat([softline, join(concat([",", line]), printed)])),
+      "(",
+      indent(concat([line, join(concat([",", line]), printed)])),
       ifBreak(shouldPrintComma(options, "all") ? "," : ""),
-      " ", // hack to add extra whitespace as before parens but not for newline
-      softline,
+      line,
       ")"
     ]),
     { shouldBreak: printed.some(willBreak) }
@@ -2313,7 +2325,7 @@ function printFunctionParams(path, print, options, expandArg) {
         fun.params[0].typeAnnotation.type === "ObjectTypeAnnotation")) &&
     !fun.rest
   ) {
-    return concat(["( ", join(", ", printed), " )"]);
+    return concat(["(", " ", join(", ", printed), " ", ")"]);
   }
 
   const parent = path.getParentNode();
@@ -2346,13 +2358,13 @@ function printFunctionParams(path, print, options, expandArg) {
     !fun.rest;
 
   return concat([
-    isFlowShorthandWithOneArg ? "" : "( ",
-    indent(concat([softline, join(concat([",", line]), printed)])),
+    isFlowShorthandWithOneArg ? "" : "(",
+    indent(concat([isFlowShorthandWithOneArg ? softline : line, join(concat([",", line]), printed)])),
     ifBreak(
       canHaveTrailingComma && shouldPrintComma(options, "all") ? "," : ""
     ),
-    softline,
-    isFlowShorthandWithOneArg ? "" : " )"
+    isFlowShorthandWithOneArg ? softline : line,
+    isFlowShorthandWithOneArg ? "" : ")"
   ]);
 }
 
@@ -2633,9 +2645,9 @@ function printMemberLookup(path, options, print) {
   return concat(
     n.computed
       ? [
-          "[ ",
-          group(concat([indent(concat([softline, property])), softline])),
-          " ]"
+          "[",
+          group(concat([indent(concat([line, property])), line])),
+          "]"
         ]
       : [".", property]
   );
