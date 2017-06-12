@@ -10,6 +10,7 @@ var defaults = {
   singleQuote: true,
   trailingComma: "all",
   bracketSpacing: true,
+  calypsoSpacing: true,
   jsxBracketSameLine: false,
   parser: "babylon",
   semi: true

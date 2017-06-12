@@ -55,6 +55,7 @@ function genericPrint(path, options, printPath, args) {
   var node = path.getValue();
   var parts = [];
   var needsParens = false;
+  const calypsoSpace = options.calypsoSpacing ? " " : "";
   var linesWithoutParens = genericPrintNoParens(path, options, printPath, args);
 
   if (!node || isEmpty(linesWithoutParens)) {
@@ -114,13 +115,13 @@ function genericPrint(path, options, printPath, args) {
   }
 
   if (needsParens) {
-    parts.unshift("(", " ");
+    parts.unshift("(", calypsoSpace);
   }
 
   parts.push(linesWithoutParens);
 
   if (needsParens) {
-    parts.push(" ", ")");
+    parts.push(calypsoSpace, ")");
   }
 
   return concat(parts);
@@ -129,6 +130,8 @@ function genericPrint(path, options, printPath, args) {
 function genericPrintNoParens(path, options, print, args) {
   var n = path.getValue();
   const semi = options.semi ? ";" : "";
+  const calypsoSpace = options.calypsoSpacing ? " " : "";
+  const calypsoLine = options.calypsoSpacing ? line : softline;
 
   if (!n) {
     return "";
@@ -182,7 +185,7 @@ function genericPrintNoParens(path, options, print, args) {
     case "ExpressionStatement":
       return concat([path.call(print, "expression"), semi]); // Babel extension.
     case "ParenthesizedExpression":
-      return concat(["(", " ", path.call(print, "expression"), " ", ")"]);
+      return concat(["(", calypsoSpace, path.call(print, "expression"), calypsoSpace, ")"]);
     case "AssignmentExpression":
       return printAssignment(
         n.left,
@@ -365,7 +368,7 @@ function genericPrintNoParens(path, options, print, args) {
               shouldAddLine
                 ? concat([
                     ifBreak(shouldPrintComma(options, "all") ? "," : ""),
-                    line
+                    calypsoLine
                   ])
                 : ""
             ])
@@ -665,7 +668,7 @@ function genericPrintNoParens(path, options, print, args) {
         return concat([
           path.call(print, "callee"),
           path.call(print, "typeParameters"),
-          concat(["(", " ", join(", ", path.map(print, "arguments")), " ", ")"])
+          concat([ "(", calypsoSpace, join(", ", path.map(print, "arguments")), calypsoSpace, ")" ])
         ]);
       }
 
@@ -791,7 +794,7 @@ function genericPrintNoParens(path, options, print, args) {
         parts.push(path.call(print, "value"));
       } else {
         if (n.computed) {
-          parts.push("[", " ", path.call(print, "key"), " ", "]");
+          parts.push("[", calypsoSpace, path.call(print, "key"), calypsoSpace, "]");
         } else {
           parts.push(printPropertyKey(path, options, print));
         }
@@ -848,7 +851,7 @@ function genericPrintNoParens(path, options, print, args) {
               "[",
               indent(
                 concat([
-                  line,
+                  calypsoLine,
                   printArrayItems(path, options, "elements", print)
                 ])
               ),
@@ -865,7 +868,7 @@ function genericPrintNoParens(path, options, print, args) {
                 options,
                 /* sameIndent */ true
               ),
-              line,
+              calypsoLine,
               "]"
             ])
           )
@@ -912,8 +915,16 @@ function genericPrintNoParens(path, options, print, args) {
     case "UnaryExpression":
       parts.push(n.operator);
 
-      if (/[a-z]$/.test(n.operator)) parts.push(" ");
-      if (n.operator === '!' && !(n.argument && n.argument.type === "UnaryExpression" && n.argument.operator === '!')) {
+      if (
+        /[a-z]$/.test(n.operator) ||
+        (options.calypsoSpacing &&
+          n.operator === "!" &&
+          !(
+            n.argument &&
+            n.argument.type === "UnaryExpression" &&
+            n.argument.operator === "!"
+          ))
+      ) {
         parts.push(" ");
       }
 
@@ -997,9 +1008,9 @@ function genericPrintNoParens(path, options, print, args) {
     case "WithStatement":
       return concat([
         "with (",
-        " ",
+        calypsoSpace,
         path.call(print, "object"),
-        " ",
+        calypsoSpace,
         ")",
         adjustClause(n.body, path.call(print, "body"))
       ]);
@@ -1010,8 +1021,8 @@ function genericPrintNoParens(path, options, print, args) {
           "if (",
           group(
             concat([
-              indent(concat([line, path.call(print, "test")])),
-              line
+              indent(concat([calypsoLine, path.call(print, "test")])),
+              calypsoLine
             ])
           ),
           ")",
@@ -1064,7 +1075,7 @@ function genericPrintNoParens(path, options, print, args) {
           concat([
             indent(
               concat([
-                line,
+                calypsoLine,
                 path.call(print, "init"),
                 ";",
                 line,
@@ -1074,7 +1085,7 @@ function genericPrintNoParens(path, options, print, args) {
                 path.call(print, "update")
               ])
             ),
-            line
+            calypsoLine
           ])
         ),
         ")",
@@ -1086,8 +1097,8 @@ function genericPrintNoParens(path, options, print, args) {
         "while (",
         group(
           concat([
-            indent(concat([line, path.call(print, "test")])),
-            line
+            indent(concat([calypsoLine, path.call(print, "test")])),
+            calypsoLine
           ])
         ),
         ")",
@@ -1097,11 +1108,11 @@ function genericPrintNoParens(path, options, print, args) {
       // Note: esprima can't actually parse "for each (".
       return concat([
         n.each ? "for each (" : "for (",
-        " ",
+        calypsoSpace,
         path.call(print, "left"),
         " in ",
         path.call(print, "right"),
-        " ",
+        calypsoSpace,
         ")",
         adjustClause(n.body, path.call(print, "body"))
       ]);
@@ -1117,11 +1128,11 @@ function genericPrintNoParens(path, options, print, args) {
         "for",
         isAwait ? " await" : "",
         " (",
-        " ",
+        calypsoSpace,
         path.call(print, "left"),
         " of ",
         path.call(print, "right"),
-        " ",
+        calypsoSpace,
         ")",
         adjustClause(n.body, path.call(print, "body"))
       ]);
@@ -1138,7 +1149,7 @@ function genericPrintNoParens(path, options, print, args) {
       }
       parts.push("while");
 
-      parts.push(" (", " ", path.call(print, "test"), " ", ")", semi);
+      parts.push(" (", calypsoSpace, path.call(print, "test"), calypsoSpace, ")", semi);
 
       return concat(parts);
     case "DoExpression":
@@ -1186,13 +1197,13 @@ function genericPrintNoParens(path, options, print, args) {
 
       return concat(parts);
     case "CatchClause":
-      parts.push("catch (", " ", path.call(print, "param"));
+      parts.push("catch (", calypsoSpace, path.call(print, "param"));
 
       if (n.guard)
         // Note: esprima does not recognize conditional catch clauses.
         parts.push(" if ", path.call(print, "guard"));
 
-      parts.push(" ", ") ", path.call(print, "body"));
+      parts.push(calypsoSpace, ") ", path.call(print, "body"));
 
       return concat(parts);
     case "ThrowStatement":
@@ -1201,9 +1212,9 @@ function genericPrintNoParens(path, options, print, args) {
     case "SwitchStatement":
       return concat([
         "switch (",
-        " ",
+        calypsoSpace,
         path.call(print, "discriminant"),
-        " ",
+        calypsoSpace,
         ") {",
         n.cases.length > 0
           ? indent(concat([hardline, join(hardline, path.map(print, "cases"))]))
@@ -1286,7 +1297,7 @@ function genericPrintNoParens(path, options, print, args) {
         path.call(print, "property")
       ]);
     case "JSXSpreadAttribute":
-      return concat(["{", " ", "...", path.call(print, "argument"), " ", "}"]);
+      return concat(["{", calypsoSpace, "...", path.call(print, "argument"), calypsoSpace, "}"]);
     case "JSXExpressionContainer": {
       const parent = path.getParentNode(0);
 
@@ -1305,15 +1316,15 @@ function genericPrintNoParens(path, options, print, args) {
 
       if (shouldInline) {
         return group(
-          concat(["{", " ", path.call(print, "expression"), lineSuffixBoundary, " ", "}"])
+          concat(["{", calypsoSpace, path.call(print, "expression"), lineSuffixBoundary, calypsoSpace, "}"])
         );
       }
 
       return group(
         concat([
           "{",
-          indent(concat([line, path.call(print, "expression")])),
-          line,
+          indent(concat([calypsoLine, path.call(print, "expression")])),
+          calypsoLine,
           lineSuffixBoundary,
           "}"
         ])
@@ -1475,10 +1486,10 @@ function genericPrintNoParens(path, options, print, args) {
         if (i < expressions.length) {
           parts.push(
             "${",
-            " ",
+            calypsoSpace,
             removeLines(expressions[i]),
             lineSuffixBoundary,
-            " ",
+            calypsoSpace,
             "}"
           );
         }
@@ -2188,6 +2199,8 @@ function hasAddedLine(arg) {
 }
 
 function printArgumentsList(path, options, print) {
+  const calypsoSpace = options.calypsoSpacing ? " " : "";
+  const calypsoLine = options.calypsoSpacing ? line : softline;
   var printed = path.map(print, "arguments");
 
   if (printed.length === 0) {
@@ -2235,30 +2248,30 @@ function printArgumentsList(path, options, print) {
         [
           concat([
             "(",
-            " ",
+            calypsoSpace,
             join(concat([", "]), printedExpanded),
-            lastArgAddedLine ? "" : " ",
+            lastArgAddedLine ? "" : calypsoSpace,
             ")"
           ]),
           shouldGroupFirst
             ? concat([
                 "(",
-                " ",
+                calypsoSpace,
                 group(printedExpanded[0], { shouldBreak: true }),
                 printed.length > 1 ? ", " : "",
                 join(concat([",", line]), printed.slice(1)),
-                " ",
+                calypsoSpace,
                 ")"
               ])
             : concat([
                 "(",
-                " ",
+                calypsoSpace,
                 join(concat([",", line]), printed.slice(0, -1)),
                 printed.length > 1 ? ", " : "",
                 group(util.getLast(printedExpanded), {
                   shouldBreak: true
                 }),
-                lastArgAddedLine ? "" : " ",
+                lastArgAddedLine ? "" : calypsoSpace,
                 ")"
               ]),
           group(
@@ -2266,7 +2279,7 @@ function printArgumentsList(path, options, print) {
               "(",
               indent(concat([line, join(concat([",", line]), printed)])),
               shouldPrintComma(options, "all") ? "," : "",
-              line,
+              calypsoLine,
               ")"
             ]),
             { shouldBreak: true }
@@ -2280,9 +2293,9 @@ function printArgumentsList(path, options, print) {
   return group(
     concat([
       "(",
-      indent(concat([line, join(concat([",", line]), printed)])),
+      indent(concat([calypsoLine, join(concat([",", line]), printed)])),
       ifBreak(shouldPrintComma(options, "all") ? "," : ""),
-      line,
+      calypsoLine,
       ")"
     ]),
     { shouldBreak: printed.some(willBreak) }
@@ -2294,6 +2307,8 @@ function printFunctionParams(path, print, options, expandArg) {
   // namedTypes.Function.assert(fun);
   var paramsField = fun.type === "TSFunctionType" ? "parameters" : "params";
   var printed = path.map(print, paramsField);
+  const calypsoSpace = options.calypsoSpacing ? " " : "";
+  const calypsoLine = options.calypsoSpacing ? line : softline;
 
   if (fun.defaults) {
     path.each(function(defExprPath) {
@@ -2352,7 +2367,7 @@ function printFunctionParams(path, print, options, expandArg) {
         fun.params[0].typeAnnotation.type === "ObjectTypeAnnotation")) &&
     !fun.rest
   ) {
-    return concat(["(", " ", join(", ", printed), " ", ")"]);
+    return concat(["(", calypsoSpace, join(", ", printed), calypsoSpace, ")"]);
   }
 
   const parent = path.getParentNode();
@@ -2386,11 +2401,11 @@ function printFunctionParams(path, print, options, expandArg) {
 
   return concat([
     isFlowShorthandWithOneArg ? "" : "(",
-    indent(concat([isFlowShorthandWithOneArg ? softline : line, join(concat([",", line]), printed)])),
+    indent(concat([isFlowShorthandWithOneArg ? softline : calypsoLine, join(concat([",", line]), printed)])),
     ifBreak(
       canHaveTrailingComma && shouldPrintComma(options, "all") ? "," : ""
     ),
-    isFlowShorthandWithOneArg ? softline : line,
+    isFlowShorthandWithOneArg ? softline : calypsoLine,
     isFlowShorthandWithOneArg ? "" : ")"
   ]);
 }
@@ -2668,12 +2683,13 @@ function printClass(path, options, print) {
 function printMemberLookup(path, options, print) {
   const property = path.call(print, "property");
   const n = path.getValue();
+  const calypsoLine = options.calypsoSpacing ? line : softline;
 
   return concat(
     n.computed
       ? [
           "[",
-          group(concat([indent(concat([line, property])), line])),
+          group(concat([indent(concat([calypsoLine, property])), calypsoLine])),
           "]"
         ]
       : [".", property]

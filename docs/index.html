@@ -92,6 +92,7 @@
     <label><input type="checkbox" id="semi" checked></input> semi</label>
     <label><input type="checkbox" id="singleQuote"></input> singleQuote</label>
     <label><input type="checkbox" id="bracketSpacing" checked></input> bracketSpacing</label>
+    <label><input type="checkbox" id="calypsoSpacing"></input> calypsoSpacing</label>
     <label><input type="checkbox" id="jsxBracketSameLine"></input> jsxBracketSameLine</label>
     <label>trailingComma <select id="trailingComma"><option value="none">none</option><option value="es5">es5</option><option value="all">all</option></select></label>
     <label>parser <select id="parser"><option value="babylon">babylon</option><option value="flow">flow</option></select></label>
@@ -113,7 +114,7 @@
 </div>
 
 <script id="code">
-var OPTIONS = ['printWidth', 'tabWidth', 'singleQuote', 'trailingComma', 'bracketSpacing', 'jsxBracketSameLine', 'parser', 'semi', 'useTabs', 'doc'];
+var OPTIONS = ['printWidth', 'tabWidth', 'singleQuote', 'trailingComma', 'bracketSpacing', 'calypsoSpacing', 'jsxBracketSameLine', 'parser', 'semi', 'useTabs', 'doc'];
 function setOptions(options) {
   OPTIONS.forEach(function(option) {
     var elem = document.getElementById(option);
