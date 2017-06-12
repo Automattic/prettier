@@ -33,7 +33,7 @@ const argv = minimist(process.argv.slice(2), {
     "flow-parser"
   ],
   string: ["print-width", "tab-width", "parser", "trailing-comma"],
-  default: { semi: true, color: true, "bracket-spacing": "es5", parser: "babylon" },
+  default: { semi: true, color: true, "bracket-spacing": true, parser: "babylon" },
   alias: { help: "h", version: "v", "list-different": "l" },
   unknown: param => {
     if (param.startsWith("-")) {
@@ -121,14 +121,14 @@ function getTrailingComma() {
 }
 
 const options = {
-  useTabs: true,
-  semi: true,
-  printWidth: 100,
-  tabWidth: 2,
-  bracketSpacing: true,
-  singleQuote: true,
+  useTabs: argv["use-tabs"],
+  semi: argv["semi"],
+  printWidth: getIntOption("print-width"),
+  tabWidth: getIntOption("tab-width"),
+  bracketSpacing: argv["bracket-spacing"],
+  singleQuote: argv["single-quote"],
   jsxBracketSameLine: argv["jsx-bracket-same-line"],
-  trailingComma: 'es5',
+  trailingComma: getTrailingComma(),
   parser: getParserOption()
 };
 
