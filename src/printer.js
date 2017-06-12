@@ -349,9 +349,12 @@ function genericPrintNoParens(path, options, print, args) {
       }
 
       // if the arrow function is expanded as last argument, we are adding a
-      // level of indentation and need to add a softline to align the closing )
+      // level of indentation and need to add a (soft) line to align the closing )
       // with the opening (.
-      const shouldAddSoftLine = args && args.expandLastArg;
+      // This means that the (soft) line is sometimes added, sometimes not. Add this fact as
+      // an `addedLine`opt to the returned `group`. It will be used by code that takes care
+      // of adding a space before the closing paren when the `calypso-spacing` option is on.
+      const shouldAddLine = args && args.expandLastArg;
 
       return group(
         concat([
@@ -359,15 +362,16 @@ function genericPrintNoParens(path, options, print, args) {
           group(
             concat([
               indent(concat([line, body])),
-              shouldAddSoftLine
+              shouldAddLine
                 ? concat([
                     ifBreak(shouldPrintComma(options, "all") ? "," : ""),
-                    softline
+                    line
                   ])
                 : ""
             ])
           )
-        ])
+        ]),
+        { addedLine: shouldAddLine }
       );
     }
     case "MethodDefinition":
@@ -2169,6 +2173,20 @@ function shouldGroupFirstArg(args) {
   );
 }
 
+function hasAddedLine(arg) {
+  switch (arg.type) {
+    case 'concat':
+      if (arg.parts.length > 0) {
+        return hasAddedLine(arg.parts[arg.parts.length - 1]);
+      }
+      return false;
+    case 'group':
+      return arg.addedLine;
+    default:
+      return false;
+  }
+}
+
 function printArgumentsList(path, options, print) {
   var printed = path.map(print, "arguments");
 
@@ -2193,6 +2211,7 @@ function printArgumentsList(path, options, print) {
 
     // We want to print the last argument with a special flag
     let printedExpanded;
+    let lastArgAddedLine = false;
     let i = 0;
     path.each(function(argPath) {
       if (shouldGroupFirst && i === 0) {
@@ -2201,9 +2220,11 @@ function printArgumentsList(path, options, print) {
             .concat(printed.slice(1));
       }
       if (shouldGroupLast && i === args.length - 1) {
+        const printedLastArg = argPath.call(p => print(p, { expandLastArg: true }));
+        lastArgAddedLine = hasAddedLine(printedLastArg);
         printedExpanded = printed
           .slice(0, -1)
-          .concat(argPath.call(p => print(p, { expandLastArg: true })));
+          .concat(printedLastArg);
       }
       i++;
     }, "arguments");
@@ -2212,7 +2233,13 @@ function printArgumentsList(path, options, print) {
       printed.some(willBreak) ? breakParent : "",
       conditionalGroup(
         [
-          concat(["(", " ", join(concat([", "]), printedExpanded), " ", ")"]),
+          concat([
+            "(",
+            " ",
+            join(concat([", "]), printedExpanded),
+            lastArgAddedLine ? "" : " ",
+            ")"
+          ]),
           shouldGroupFirst
             ? concat([
                 "(",
@@ -2231,7 +2258,7 @@ function printArgumentsList(path, options, print) {
                 group(util.getLast(printedExpanded), {
                   shouldBreak: true
                 }),
-                " ",
+                lastArgAddedLine ? "" : " ",
                 ")"
               ]),
           group(

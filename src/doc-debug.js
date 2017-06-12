@@ -95,6 +95,7 @@ function printDoc(doc) {
 
     return (
       (doc.break ? "wrappedGroup" : "group") +
+      (doc.addedLine ? "WithTrailingLine" : "") +
       "(" +
       printDoc(doc.contents) +
       ")"
