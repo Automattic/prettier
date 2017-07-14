@@ -1605,6 +1605,10 @@ FastPath$1.prototype.needsParens = function (options) {
         case "AwaitExpression":
         case "TSAsExpression":
         case "TSNonNullExpression":
+          // Logical and Binary expressions already got their parens if parent is UnaryExpression
+          if (parent.type === "UnaryExpression" && (node.type === "LogicalExpression" || node.type === "BinaryExpression")) {
+            return false;
+          }
           return true;
 
         case "MemberExpression":
@@ -4194,7 +4198,7 @@ function genericPrintNoParens(path$$1, options, print, args) {
         }
 
         if (parent.type === "UnaryExpression") {
-          return group$1(concat$2([indent$2(concat$2([softline$1, concat$2(_parts2)])), softline$1]));
+          return group$1(concat$2(["(", indent$2(concat$2([parenLine, concat$2(_parts2)])), parenLine, ")"]));
         }
 
         // Avoid indenting sub-expressions in assignment/return/etc statements.
