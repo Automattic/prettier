@@ -6,6 +6,7 @@ It is forked off of prettier v1.5.
 In order to install run
 ```
 npm i --save-dev "git+https://github.com/Automattic/calypso-prettier.git#calypso-1.5"
+```
 
 The original readme continues unchanged below:
 
