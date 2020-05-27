@@ -45,7 +45,7 @@ function embed(path, print, textToDoc, options) {
                 currVal;
         }, "");
         const doc = textToDoc(text, { parser: "scss" });
-        return transformCssDoc(doc, path, print);
+        return transformCssDoc(doc, path, print, options);
       }
 
       /*
@@ -227,7 +227,7 @@ function escapeTemplateCharacters(doc, raw) {
   });
 }
 
-function transformCssDoc(quasisDoc, path, print) {
+function transformCssDoc(quasisDoc, path, print, options) {
   const parentNode = path.getValue();
 
   const isEmpty =
@@ -239,7 +239,7 @@ function transformCssDoc(quasisDoc, path, print) {
   const expressionDocs = parentNode.expressions
     ? path.map(print, "expressions")
     : [];
-  const newDoc = replacePlaceholders(quasisDoc, expressionDocs);
+  const newDoc = replacePlaceholders(quasisDoc, expressionDocs, options);
   /* istanbul ignore if */
   if (!newDoc) {
     throw new Error("Couldn't insert all the expressions");
@@ -256,7 +256,7 @@ function transformCssDoc(quasisDoc, path, print) {
 // and replace them with the expression docs one by one
 // returns a new doc with all the placeholders replaced,
 // or null if it couldn't replace any expression
-function replacePlaceholders(quasisDoc, expressionDocs) {
+function replacePlaceholders(quasisDoc, expressionDocs, options) {
   if (!expressionDocs || !expressionDocs.length) {
     return quasisDoc;
   }
@@ -299,11 +299,12 @@ function replacePlaceholders(quasisDoc, expressionDocs) {
       // animation: linear ${time}s ease-out;
       const suffix = placeholderMatch[2];
       const expression = expressions[placeholderID];
+      const parenSpace = options.parenSpacing ? " " : "";
 
       replaceCounter++;
       parts = parts
         .slice(0, atPlaceholderIndex)
-        .concat(["${", expression, "}" + suffix])
+        .concat(["${", parenSpace, expression, parenSpace, "}" + suffix])
         .concat(rest);
     }
     return { ...doc, parts };
