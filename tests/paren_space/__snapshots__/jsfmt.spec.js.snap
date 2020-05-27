@@ -666,6 +666,11 @@ return (<div css={\`
   }
 \`}/>)
 
+const SpaceOrNoSpace = styled.div\`
+  transform: \${(props)=>(props.isComplete?'rotateY(180deg)':'rotateY(0)')};
+  transform: \${ ( props ) => ( props.isComplete ? 'rotateY(180deg)' : 'rotateY(0)' ) };
+\`;
+
 =====================================output=====================================
 \`\${ 1 ?? 2 }\`;
 
@@ -709,6 +714,13 @@ return (
     \` }
   />
 );
+
+const SpaceOrNoSpace = styled.div\`
+  transform: \${( props ) =>
+    props.isComplete ? "rotateY(180deg)" : "rotateY(0)"};
+  transform: \${( props ) =>
+    props.isComplete ? "rotateY(180deg)" : "rotateY(0)"};
+\`;
 
 ================================================================================
 `;

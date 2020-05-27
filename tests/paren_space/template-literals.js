@@ -33,3 +33,8 @@ return (<div css={`
     font-size: 20px;
   }
 `}/>)
+
+const SpaceOrNoSpace = styled.div`
+  transform: ${(props)=>(props.isComplete?'rotateY(180deg)':'rotateY(0)')};
+  transform: ${ ( props ) => ( props.isComplete ? 'rotateY(180deg)' : 'rotateY(0)' ) };
+`;
