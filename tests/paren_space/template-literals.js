@@ -32,6 +32,10 @@ styled.input`
 	}
 `;
 
+const value = `
+  Hello ${(props) => (props.isError?props.theme.colors.error:props.theme.colors.borderColor)};
+`;
+
 return (<div css={`
   color: blue;
   font-size: 17 px;
