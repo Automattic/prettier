@@ -554,6 +554,7 @@ let htmlTemplateLiteralCounter = 0;
 
 function printHtmlTemplateLiteral(path, print, textToDoc, parser, options) {
   const node = path.getValue();
+  const parenSpace = options.parenSpacing ? " " : "";
 
   const counter = htmlTemplateLiteralCounter;
   htmlTemplateLiteralCounter = (htmlTemplateLiteralCounter + 1) >>> 0;
@@ -611,7 +612,13 @@ function printHtmlTemplateLiteral(path, print, textToDoc, parser, options) {
 
         const placeholderIndex = +component;
         parts.push(
-          concat(["${", group(expressionDocs[placeholderIndex]), "}"])
+          concat([
+            "${",
+            parenSpace,
+            group(expressionDocs[placeholderIndex]),
+            parenSpace,
+            "}",
+          ])
         );
       }
 
